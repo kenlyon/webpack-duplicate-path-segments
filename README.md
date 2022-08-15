@@ -1,46 +1,42 @@
-# Getting Started with Create React App
+# Duplicate path segments in Webpack
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+This repository demonstrates a problem where webpack repeats part of the path when dynamically importing a chunk within a web worker.
 
-## Available Scripts
+This was discovered while using [Create React App](https://github.com/facebook/create-react-app#readme), but might be an issue with [webpack](https://webpack.js.org/) itself.
 
-In the project directory, you can run:
+## Prerequisites
 
-### `yarn start`
+* [node.js](https://nodejs.org/en/) (I'm using v16.15.0)
+* [yarn](https://yarnpkg.com/) (I'm using v1.22.19)
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+## Steps to reproduce
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+1. `yarn install`
+2. `yarn build`
+3. `yarn start-prod`
 
-### `yarn test`
+A browser window will open, showing the default page from create react app.
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+Open the browser's console and you will see these messages:
+```
+[Worker] Received: abc 64.3c37598a.chunk.js:2:7979
+NetworkError: A network error occurred. 64.3c37598a.chunk.js:2
+```
 
-### `yarn build`
+Reload the page with the _Network_ tab open and you will see a `404` entry for a URL like this:
+```
+http://127.0.0.1:8080/static/js/static/js/975.6b1d0bce.chunk.js
+```
+Note the duplicate `static/js` segment. The file name is correct. Without the repeated `static/js`, the request would have succeeded.
+## Additional notes - debug build works as expected
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+If you run the site via `yarn start`, the console will show successful output:
+```
+[webpack-dev-server] Server started: Hot Module Replacement enabled, Live Reloading enabled, Progress disabled, Overlay enabled. index.js:551
+Download the React DevTools for a better development experience: https://reactjs.org/link/react-devtools react-dom.development.js:29840
+[Worker] Received: abc src_TestWorker_worker_ts.chunk.js:22:11
+[Worker] Received: abc src_TestWorker_worker_ts.chunk.js:22:11
+[App] Received: Message from another module. 2 App.tsx:9
+```
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
-
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
-
-### `yarn eject`
-
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
-
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
-
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
+The issue relates to the _production_ configuration of webpack.
